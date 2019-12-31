@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<!-- ============== inject =================== -->
+
+	<!-- -->
+	<springProperty scope="context" name="LCD" source="log.custom.dir"
+	                defaultValue=""/>
+
+	<!-- -->
+	<!-- <springProperty scope="context" name="LCCL" source="log.custom.console.level" defaultValue="DEBUG"/>-->
+	<springProperty scope="context" name="LCRL" source="log.custom.root.level" defaultValue="DEBUG"/>
+
+	<!-- -->
+	<springProperty scope="context" name="MAX_FILE_SIZE" source="log.custom.max_file_size" defaultValue="50MB"/>
+
+	<!-- -->
+	<springProperty scope="context" name="MAX_HISTORY" source="log.custom.max_history" defaultValue="10"/>
+
+
+	<!-- ==============  =================== -->
+
+	<!-- 日志文件编码-->
+	<property name="LOG_CHARSET" value="UTF-8"/>
+
+	<!-- 日志文件路径+日期-->
+	<property name="LOG_SUB_DIR" value="${LCD}/%d{yyyyMMdd}"/>
+
+	<!-- -->
+	<property name="LOG_MSG_PATTERN"
+	          value="- | [%d{yyyyMMdd HH:mm:ss.SSS}] | [%level] | [${HOSTNAME}] | [%thread] | [%logger{36}] | --> %msg|%n "/>
+
+
+	<!-- ==============  =================== -->
+
+	<!--输出到控制台-->
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<!-- 输出的日志内容格式化-->
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<pattern>${LOG_MSG_PATTERN}</pattern>
+		</layout>
+	</appender>
+
+	<!--输出到文件-->
+	<appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<!--日志文件路径，日志文件名称-->
+		<File>${LCD}/all.log</File>
+
+		<!-- 设置滚动策略，当天的日志大小超过 ${MAX_FILE_SIZE} 文件大小时候，新的内容写入新的文件 -->
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+
+			<!--日志文件路径，新的 ALL 日志文件名称，i 是个变量 -->
+			<FileNamePattern>${LOG_SUB_DIR}/all%i.log</FileNamePattern>
+
+			<!-- 配置日志的滚动时间 ，表示只保留最近 n 天的日志 -->
+			<MaxHistory>${MAX_HISTORY}</MaxHistory>
+
+			<!--当天的日志大小超过 ${MAX_FILE_SIZE} 文件大小时候，新的内容写入新的文件-->
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+
+		</rollingPolicy>
+
+		<!-- 输出的日志内容格式化-->
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<pattern>${LOG_MSG_PATTERN}</pattern>
+		</layout>
+
+	</appender>
+
+	<!--输出到文件，ERROR-->
+	<appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+		<!-- 下面为配置只输出error级别的日志 -->
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>ERROR</level>
+			<OnMismatch>DENY</OnMismatch>
+			<OnMatch>ACCEPT</OnMatch>
+		</filter>
+
+		<!--日志文件路径，日志文件名称-->
+		<File>${LCD}/err.log</File>
+
+		<!-- 设置滚动策略，当天的日志大小超过 ${MAX_FILE_SIZE} 文件大小时候，新的内容写入新的文件 -->
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+
+			<!--日志文件路径，新的 ERR 日志文件名称，i 是个变量 -->
+			<FileNamePattern>${LOG_SUB_DIR}/err%i.log</FileNamePattern>
+
+			<!-- 配置日志的滚动时间 ，表示只保留最近 n 天的日志 -->
+			<MaxHistory>${MAX_HISTORY}</MaxHistory>
+
+			<!--当天的日志大小超过 ${MAX_FILE_SIZE} 文件大小时候，新的内容写入新的文件-->
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+
+		<!-- 输出的日志内容格式化-->
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>${LOG_MSG_PATTERN}</Pattern>
+		</layout>
+
+	</appender>
+
+	<!--  -->
+	<appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="CONSOLE"/>
+	</appender>
+
+	<appender name="ASYNC_FILE_ALL" class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="FILE_ALL"/>
+	</appender>
+
+	<appender name="ASYNC_FILE_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="FILE_ERROR"/>
+	</appender>
+
+
+	<!-- ==============  =================== -->
+
+	<!-- 设置某一个包或者具体的某一个类的日志 -->
+	<!-- additivity 设为false，则logger内容不附加至root -->
+	<logger name="org.apache.kafka" level="WARN" additivity="false">
+
+		<!-- additivity 设为 false，则表示不附加到 root，只会附加到这里的appender -->
+		<!-- 这样就保证 level="WARN" -->
+		<!--  -->
+		<appender-ref ref="ASYNC_CONSOLE"/>
+
+		<!--  -->
+		<appender-ref ref="ASYNC_FILE_ALL"/>
+
+		<!--  -->
+		<appender-ref ref="ASYNC_FILE_ERROR"/>
+
+	</logger>
+
+	<!-- 貌似不支持通配符 -->
+	<!-- <logger name="*" level="${LCCL}" additivity="false">-->
+	<!-- 	<appender-ref ref="ASYNC_CONSOLE"/>-->
+	<!-- </logger>-->
+
+	<!-- ==============  =================== -->
+
+	<!-- -->
+	<root level="${LCRL}">
+
+		<!--  -->
+		<appender-ref ref="ASYNC_CONSOLE"/>
+
+		<!--  -->
+		<appender-ref ref="ASYNC_FILE_ALL"/>
+
+		<!--  -->
+		<appender-ref ref="ASYNC_FILE_ERROR"/>
+	</root>
+
+</configuration>
